@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>F2L Practice</title>
+    <!-- Add some CSS to change client UI -->
+    <style>
+    body {
+        background-color: #222222;
+        }
+	.text-settings {
+		text-align: left;
+		color: #62CFED;
+     	display: block;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 30px;
+		margin-left: 30px;
+		margin-top: 20px;
+	}
+	.buttons {
+		font-size: 20px;
+	}
+    </style>
+    <script>
+		var scrambleAlg;
+		var solutionAlg;
+		var progInd;
+		var solutionText;
+		var myHeaders;
+		var requestOptions;
+		function start ()
+		{
+			myHeaders = new Headers();
+			myHeaders.append("Content-Type", "application/json");
+			let raw = JSON.stringify({"resetList":"true"});
+			requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+				body: raw,
+                redirect: 'follow'
+            };
+			
+			progInd = document.getElementById("progressIndicator");
+			solutionText = document.getElementById("solText");
+			
+			getNextCase(true);
+		}
+		function getNextCase (displayNext = false)
+		{
+			progInd.innerHTML = "...";	//set the progress indicator to let the user know that the page is loading the next case
+			
+			//fetch the case number, scramble algorithm, and solution algorithm from the database via lambda function
+            fetch("https://gpwzj2npnf.execute-api.us-west-2.amazonaws.com/dev", requestOptions)
+            .then(response => response.text())
+			.then(data => 
+			{
+				//store data in variables
+				scrambleAlg = (JSON.parse(data).scrambleAlg).slice(1, -1);
+				solutionAlg = (JSON.parse(data).solutionAlg).slice(1, -1) + '       -case: ' + JSON.parse(data).caseNum;
+				progInd.innerHTML = "";
+				if (displayNext)//will only be true when being called from start
+				{
+					let raw = JSON.stringify({"resetList":"false"});
+					requestOptions = 
+					{
+						method: 'POST',
+						headers: myHeaders,
+						body: raw,
+						redirect: 'follow'
+					};
+					displayNextCase();
+				}
+				
+			})
+            .catch(error => console.log('error', error));
+		}
+		function displayNextCase ()
+		{
+			document.getElementById('scramble').innerHTML = scrambleAlg;
+			document.getElementById('solution').innerHTML = solutionAlg;
+			solutionText.setAttribute("hidden", "hidden");
+			
+			//start retrieving the next case right away, so that when the "next" button is pressed, we don't have to wait for the lambda function, db, etc.
+			getNextCase();
+		}
+		//hides/unhides the solution text
+		function toggleSolutionText() 
+		{
+			let hidden = solutionText.getAttribute("hidden");
+    
+			if (hidden) 
+			{
+				solutionText.removeAttribute("hidden");
+			} 
+			else 
+			{
+				solutionText.setAttribute("hidden", "hidden");
+			}
+		}
+    </script>
+</head>
+<body onload="start()">
+    <form>
+		<div class="text-settings">
+			<h1>F2L Practice</h1>
+			<label>Scramble: <span id="scramble"></span></label>
+			<br/>
+			<label id='solText' hidden='hidden'>Solution: <span id="solution"></span></label>
+			<br/>
+		
+			<button class="buttons" type="button" onclick="toggleSolutionText()">Show solution</button>
+			<button class="buttons" type="button" onclick="displayNextCase()">Next</button>
+		
+			<br/>
+			<label id="progressIndicator"></label>
+		</div>
+    </form>
+</body>
+</html>
