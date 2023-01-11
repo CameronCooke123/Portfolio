@@ -20,14 +20,21 @@
 	.buttons {
 		font-size: 20px;
 	}
+	.imageFeatures {
+		width: 320;
+		height: 320;
+	}
     </style>
     <script>
 		var scrambleAlg;
 		var solutionAlg;
+		var caseImageSrcText;
 		var progInd;
 		var solutionText;
+		var caseImage;
 		var myHeaders;
 		var requestOptions;
+		
 		function start ()
 		{
 			myHeaders = new Headers();
@@ -42,6 +49,7 @@
 			
 			progInd = document.getElementById("progressIndicator");
 			solutionText = document.getElementById("solText");
+			caseImage = document.getElementById("caseImg");
 			
 			getNextCase(true);
 		}
@@ -55,8 +63,18 @@
 			.then(data => 
 			{
 				//store data in variables
+				//--the raw data comes with quotes "" around the alg, so the .slice(1, -1) gets rid of the first and last characters from the string.
+				let caseNum = JSON.parse(data).caseNum;
 				scrambleAlg = (JSON.parse(data).scrambleAlg).slice(1, -1);
-				solutionAlg = (JSON.parse(data).solutionAlg).slice(1, -1) + '       -case: ' + JSON.parse(data).caseNum;
+				solutionAlg = (JSON.parse(data).solutionAlg).slice(1, -1) + '       -case: ' + caseNum;
+				caseImageSrcText = "CaseImages\\f2lcase" + caseNum + ".png";
+				
+				//Depending on the case, there may be multiple scramble algs returned, separated by an underscore.
+				//We want to separate them, and then pick one at random to display.
+				let scrAlgList = scrambleAlg.split("_");
+				randNum = Math.floor(Math.random() * scrAlgList.length);
+				scrambleAlg = scrAlgList[randNum];
+				
 				progInd.innerHTML = "";
 				if (displayNext)//will only be true when being called from start
 				{
@@ -79,6 +97,8 @@
 			document.getElementById('scramble').innerHTML = scrambleAlg;
 			document.getElementById('solution').innerHTML = solutionAlg;
 			solutionText.setAttribute("hidden", "hidden");
+			caseImage.setAttribute("hidden", "hidden");
+			caseImage.src = caseImageSrcText;
 			
 			//start retrieving the next case right away, so that when the "next" button is pressed, we don't have to wait for the lambda function, db, etc.
 			getNextCase();
@@ -91,10 +111,12 @@
 			if (hidden) 
 			{
 				solutionText.removeAttribute("hidden");
+				caseImage.removeAttribute("hidden");
 			} 
 			else 
 			{
 				solutionText.setAttribute("hidden", "hidden");
+				caseImage.setAttribute("hidden", "hidden");
 			}
 		}
     </script>
@@ -106,6 +128,8 @@
 			<label>Scramble: <span id="scramble"></span></label>
 			<br/>
 			<label id='solText' hidden='hidden'>Solution: <span id="solution"></span></label>
+			<br/>
+			<img id='caseImg' class="imageFeatures" src="CaseImages\f2lcase0.png" hidden='hidden'>
 			<br/>
 		
 			<button class="buttons" type="button" onclick="toggleSolutionText()">Show solution</button>
