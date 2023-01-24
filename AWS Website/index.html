@@ -35,6 +35,17 @@
 		var myHeaders;
 		var requestOptions;
 		
+		document.addEventListener('keydown', (event) => {
+			//var name = event.key;
+			//var code = event.code;
+			// Alert the key name and key code on keydown
+			//alert(`Key pressed ${name} \r\n Key code value: ${code}`);
+			if (event.key == 'ArrowRight')
+				displayNextCase();
+			else if (event.key == 'ArrowUp' || event.key == 'ArrowDown')
+				toggleSolutionText();
+		}, false);
+		
 		function start ()
 		{
 			myHeaders = new Headers();
